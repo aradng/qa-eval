@@ -1,0 +1,48 @@
+[project]
+name = "qa-eval"
+version = "0.1.0"
+description = "Notional totals service — QA evaluation harness target"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "faststream[kafka]>=0.5.30",
+    "cramjam>=2.8",  # snappy/lz4 codecs for aiokafka
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "redis>=5.2",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+]
+
+[project.optional-dependencies]
+# Enough to run the given smoke tests. Add whatever else you need.
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+    "testcontainers[postgres,redis,kafka]>=4.8",
+    "psycopg[binary]>=3.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# one event loop for the whole session, so the pooled Postgres and Redis
+# connections are not bound to a loop that has already been closed.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+markers = [
+    "phase0: smoke tests, given",
+    "phase1: contract boundary",
+    "phase2: delivery faults",
+    "phase3: concurrency",
+    "phase4: schema evolution",
+    "phase5: time and sealing",
+]

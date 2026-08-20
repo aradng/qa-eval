@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Runs the suite once per flag configuration.
+#
+# The contract: every configuration must come out GREEN. With a flag armed
+# that means the tests which catch its fault are xfail(strict=True) -- an
+# unexpected pass (XPASS) is a failure, because it means the fault stopped
+# being caught.
+#
+# Add configurations as you add coverage. Which ones are worth running, and
+# which combinations you can justify skipping, is yours to decide.
+set -uo pipefail
+cd "$(dirname "$0")/.."
+
+PYTEST="${PYTEST:-.venv/bin/pytest}"
+CONFIGS=(
+    ""
+    "DEMO_HEALTH_BUG=true"
+)
+
+failed=0
+for config in "${CONFIGS[@]}"; do
+    label="${config:-default}"
+    printf '\n\033[1m== %s ==\033[0m\n' "$label"
+    if ! env $config "$PYTEST" -q --tb=short "$@"; then
+        printf '\033[31mFAILED: %s\033[0m\n' "$label"
+        failed=1
+    fi
+done
+
+if [ "$failed" -ne 0 ]; then
+    printf '\n\033[31mone or more configurations failed\033[0m\n'
+    exit 1
+fi
+printf '\n\033[32mall configurations green\033[0m\n'
